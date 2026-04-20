@@ -151,13 +151,23 @@ async function iA(){
     volume:-15
   }).connect(rv);
   
-  // Soft heartbeat
-  const kF=new Tone.Filter({frequency:70,type:'lowpass'}).connect(rv);
+  // Soft heartbeat — LOUDER, more present
+  const kF=new Tone.Filter({frequency:90,type:'lowpass'}).connect(rv);
   sy.hb=new Tone.MembraneSynth({
-    pitchDecay:0.25,octaves:2,
-    envelope:{attack:0.03,decay:1.5,sustain:0,release:2},
-    volume:-16
+    pitchDecay:0.2,octaves:3,
+    envelope:{attack:0.015,decay:1.2,sustain:0,release:1.8},
+    volume:-8
   }).connect(kF);
+  
+  // Echo guitar — plucked string with long delay
+  const gtrDl=new Tone.FeedbackDelay({delayTime:0.55,feedback:0.45,wet:0.5}).connect(rv);
+  const gtrDl2=new Tone.FeedbackDelay({delayTime:0.85,feedback:0.3,wet:0.3}).connect(rv);
+  sy.gtr=new Tone.PluckSynth({
+    attackNoise:1.5,
+    dampening:3500,
+    resonance:0.97,
+    volume:-14
+  }).connect(gtrDl).connect(gtrDl2);
   
   aR=true;startTrack();
 }
@@ -191,13 +201,26 @@ function startTrack(){
     sy.shm.triggerAttackRelease(tr.shm,'10',t,0.06);
   },'6m').start('3m');
   
-  // Heartbeat — gentle
+  // Heartbeat — strong, felt in chest
   new Tone.Loop(t=>{
-    sy.hb.triggerAttackRelease('D1','4n',t,0.22);
+    sy.hb.triggerAttackRelease('D1','4n',t,0.55);
   },'1.5n').start(0);
   new Tone.Loop(t=>{
-    sy.hb.triggerAttackRelease('D1','8n',t,0.1);
+    sy.hb.triggerAttackRelease('D1','8n',t,0.3);
   },'1.5n').start('0.5n');
+  
+  // Echo guitar — sparse plucked notes that ring out and repeat
+  const gtrNotes={
+    0:['D4','A3','F#4'],1:['F#4','C#4','G#3'],2:['A3','E4','B3'],3:['D4','G3','A3'],
+    4:['E4','B3','F#3'],5:['C4','G4','E4'],6:['F3','Bb3','D4'],7:['D4','F#3','A3'],
+    8:['E4','B3','G#3'],9:['G3','D4','B3']
+  };
+  const gn=gtrNotes[trackIdx%10]||gtrNotes[0];
+  let gi=0;
+  new Tone.Loop(t=>{
+    sy.gtr.triggerAttack(gn[gi%gn.length],t);
+    gi++;
+  },'2m').start('1m');
   
   Tone.Transport.start();
   
